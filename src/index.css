@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-syne: 'Syne', sans-serif;
+    --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'Fira Code', monospace;
+    --font-arabic: 'Noto Kufi Arabic', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-jakarta);
+  }
+
+  html[lang="ar"] body {
+    font-family: var(--font-arabic);
+  }
+}
+
+.font-syne {
+  font-family: 'Syne', sans-serif;
+}
+
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-arabic {
+  font-family: 'Noto Kufi Arabic', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Fira Code', monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Glassmorphism & custom utility aesthetics */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.04);
+}
+
+.glass-auth {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.radar-beam {
+  background: conic-gradient(from 0deg, rgba(59, 130, 246, 0.45) 0deg, rgba(59, 130, 246, 0) 70deg, transparent 360deg);
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-radar-sweep {
+  animation: radarSweep 4s linear infinite;
+}
+
+@keyframes floatBlob1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(45px, -35px) scale(1.08); }
+}
+
+@keyframes floatBlob2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 45px) scale(1.12); }
+}
+
+.animate-float-blob-1 {
+  animation: floatBlob1 14s infinite ease-in-out;
+}
+
+.animate-float-blob-2 {
+  animation: floatBlob2 16s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" id="htmlRoot" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="x7 — client-side AES-256-GCM encryption, password strength analysis, secure password generator and URL inspector. Nothing leaves your browser.">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0f172a">
+  <title>x7 — Browser Cryptography & Security Toolkit</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='800' font-size='28' text-anchor='middle' fill='white'%3Ex7%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Noto+Kufi+Arabic:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            syne: ['Syne', 'sans-serif'],
+            jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+            kufi: ['Noto Kufi Arabic', 'sans-serif']
+          },
+          animation: {
+            'radar-sweep': 'radarSweep 4s linear infinite',
+            'float-blob-1': 'floatBlob1 12s infinite ease-in-out',
+            'float-blob-2': 'floatBlob2 15s infinite ease-in-out',
+            'float-blob-3': 'floatBlob3 10s infinite ease-in-out'
+          },
+          keyframes: {
+            radarSweep: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+            floatBlob1: { '0%, 100%': { transform: 'translate(0,0) scale(1)' }, '50%': { transform: 'translate(50px,-40px) scale(1.1)' } },
+            floatBlob2: { '0%, 100%': { transform: 'translate(0,0) scale(1)' }, '50%': { transform: 'translate(-60px,50px) scale(1.15)' } },
+            floatBlob3: { '0%, 100%': { transform: 'translate(0,0) scale(1)' }, '50%': { transform: 'translate(40px,60px) scale(1.08)' } }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    html[lang="ar"] body { font-family: 'Noto Kufi Arabic', sans-serif; font-weight: 500; }
+    html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3,
+    html[lang="ar"] .font-syne, html[lang="ar"] .font-jakarta {
+      font-family: 'Noto Kufi Arabic', sans-serif !important;
+      font-weight: 800 !important;
+      letter-spacing: 0;
+    }
+    html[lang="ar"] .font-mono { letter-spacing: 0; }
+
+    :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+    input:focus-visible, textarea:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, .18); }
+
+    .glass-nav { background: rgba(255,255,255,.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(226,232,240,.9); }
+    .glass-card { background: rgba(255,255,255,.92); backdrop-filter: blur(14px); border: 1px solid rgba(226,232,240,.9); box-shadow: 0 20px 40px -15px rgba(15,23,42,.04); }
+    .glass-auth { background: rgba(255,255,255,.98); backdrop-filter: blur(24px); border: 1px solid rgba(226,232,240,.9); }
+
+    .btn-gradient-primary { background: linear-gradient(135deg,#1e293b 0%,#0f172a 100%); color:#fff; transition: all .3s cubic-bezier(.4,0,.2,1); }
+    .btn-gradient-primary:hover:not(:disabled) { box-shadow: 0 10px 25px -5px rgba(15,23,42,.25); transform: translateY(-1.5px); }
+    .btn-accent { background: linear-gradient(135deg,#2563eb 0%,#4f46e5 100%); color:#fff; transition: all .3s cubic-bezier(.4,0,.2,1); }
+    .btn-accent:hover:not(:disabled) { box-shadow: 0 10px 25px -5px rgba(37,99,235,.35); transform: translateY(-1.5px); }
+    .btn-outline-sleek { background: rgba(255,255,255,.9); border: 1px solid #e2e8f0; color:#334155; transition: all .3s ease; }
+    .btn-outline-sleek:hover:not(:disabled) { border-color:#cbd5e1; background:#f8fafc; color:#0f172a; transform: translateY(-1px); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    #bgCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .glowing-shape { position: fixed; border-radius: 50%; filter: blur(60px); z-index: 0; pointer-events: none; opacity: .55; }
+
+    .radar-beam { background: conic-gradient(from 0deg, rgba(59,130,246,.45) 0deg, rgba(59,130,246,0) 70deg, transparent 360deg); }
+
+    .user-swipe-pill { position: relative; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:9999px; height:38px; display:flex; align-items:center; justify-content:space-between; user-select:none; overflow:hidden; min-width:175px; padding-inline: 10px; }
+    .user-swipe-thumb { position: relative; width:30px; height:30px; background:#fff; color:#475569; border-radius:9999px; display:flex; align-items:center; justify-content:center; cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,.1); z-index:10; transition: color .2s; touch-action: none; }
+    .user-swipe-thumb:active { cursor: grabbing; color:#e11d48; }
+
+    input[type=range] { accent-color: #1e293b; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body class="font-inter bg-slate-50 text-slate-800 antialiased relative selection:bg-slate-900 selection:text-white overflow-x-hidden">
+
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <div class="glowing-shape w-96 h-96 bg-blue-300/40 top-10 left-10 animate-float-blob-1" aria-hidden="true"></div>
+  <div class="glowing-shape w-[450px] h-[450px] bg-indigo-200/50 top-1/2 right-10 animate-float-blob-2" aria-hidden="true"></div>
+  <div class="glowing-shape w-80 h-80 bg-cyan-200/40 bottom-10 left-1/3 animate-float-blob-3" aria-hidden="true"></div>
+
+  <!-- Toasts -->
+  <div id="toastHost" class="fixed top-24 inset-x-0 z-[60] flex flex-col items-center gap-2 pointer-events-none px-4" role="status" aria-live="polite"></div>
+
+  <!-- ================= AUTH GATE ================= -->
+  <div id="authOverlay" role="dialog" aria-modal="true" aria-labelledby="authTitle" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md transition-all duration-500">
+    <div class="glass-auth w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-16 -right-16 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl" aria-hidden="true"></div>
+      <div class="absolute -bottom-16 -left-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl" aria-hidden="true"></div>
+
+      <div class="text-center mb-6 relative z-10">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 text-white font-syne text-2xl font-bold shadow-xl mb-4 border border-slate-800">x7</div>
+        <h2 id="authTitle" class="font-jakarta text-2xl font-bold text-slate-900 tracking-tight">Secure Sign-In Required</h2>
+        <p class="text-xs text-slate-500 mt-1 font-mono" data-en="UNLOCK THE X7 TERMINAL" data-ar="سجّل الدخول لفتح النظام">UNLOCK THE X7 TERMINAL</p>
+      </div>
+
+      <div class="flex p-1 bg-slate-100/80 rounded-xl mb-5 relative z-10 border border-slate-200/80" role="tablist">
+        <button type="button" id="tabSignIn" role="tab" onclick="switchAuthTab('signin')" class="flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 bg-white text-slate-900 shadow-sm" data-en="Sign In" data-ar="تسجيل الدخول">Sign In</button>
+        <button type="button" id="tabSignUp" role="tab" onclick="switchAuthTab('signup')" class="flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-300 text-slate-500 hover:text-slate-900" data-en="Create Account" data-ar="إنشاء حساب">Create Account</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4 relative z-10" novalidate>
+        <div id="nameGroup" class="hidden">
+          <label for="authName" class="block text-xs font-semibold text-slate-700 mb-1" data-en="Display Name" data-ar="الاسم الظاهر">Display Name</label>
+          <div class="relative">
+            <i class="fa-solid fa-id-badge absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+            <input type="text" id="authName" autocomplete="nickname" maxlength="40" data-ph-en="SecOps Officer Vance" data-ph-ar="اسم المستخدم" placeholder="SecOps Officer Vance" class="w-full ps-9 pe-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 focus:bg-white transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label for="authEmail" class="block text-xs font-semibold text-slate-700 mb-1" data-en="Email" data-ar="البريد الإلكتروني">Email</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+            <input type="email" id="authEmail" required autocomplete="username" dir="ltr" placeholder="officer@enterprise.x7" class="w-full ps-9 pe-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 focus:bg-white transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label for="authPassword" class="block text-xs font-semibold text-slate-700 mb-1" data-en="Password (min. 10 characters)" data-ar="كلمة المرور (10 أحرف على الأقل)">Password (min. 10 characters)</label>
+          <div class="relative">
+            <i class="fa-solid fa-key absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+            <input type="password" id="authPassword" required autocomplete="current-password" dir="ltr" placeholder="••••••••••••" class="w-full ps-9 pe-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 focus:bg-white transition-all">
+            <button type="button" onclick="toggleReveal('authPassword','authEye')" id="authEye" class="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-800 text-xs" aria-label="Show / hide password"><i class="fa-solid fa-eye"></i></button>
+          </div>
+        </div>
+
+        <p id="authError" role="alert" class="hidden text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></p>
+
+        <button type="submit" id="authSubmitBtn" class="w-full py-3 px-4 btn-gradient-primary text-xs font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
+          <span data-en="Sign In & Unlock" data-ar="تسجيل الدخول وفتح النظام">Sign In & Unlock</span>
+          <i class="fa-solid fa-shield-halved text-xs" aria-hidden="true"></i>
+        </button>
+
+        <p class="text-[11px] leading-relaxed text-slate-500 text-center" data-en="Accounts are stored only in this browser (salted PBKDF2 hash). This is a convenience lock, not server-side security." data-ar="الحسابات تُحفظ في هذا المتصفح فقط (بصمة PBKDF2 مع ملح). هذا قفل للراحة وليس حماية من جهة الخادم.">Accounts are stored only in this browser (salted PBKDF2 hash). This is a convenience lock, not server-side security.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP ================= -->
+  <div id="mainContent" inert class="filter blur-md pointer-events-none transition-all duration-700 min-h-screen flex flex-col justify-between relative z-10">
+
+    <header class="fixed top-0 left-0 right-0 z-40 px-4 sm:px-8 py-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between glass-nav px-5 sm:px-7 py-3 rounded-full shadow-lg shadow-slate-900/5">
+
+        <a href="#top" class="flex items-center gap-3 group" aria-label="x7 home">
+          <div class="w-9 h-9 rounded-xl bg-slate-900 text-white font-syne font-bold text-base flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">x7</div>
+          <div class="flex flex-col">
+            <span class="font-syne text-lg font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">x7</span>
+            <span class="text-[8px] font-mono tracking-widest text-slate-500 uppercase font-bold -mt-1" data-en="SECURITY TOOLKIT" data-ar="أدوات الأمن السيبراني">SECURITY TOOLKIT</span>
+          </div>
+        </a>
+
+        <nav class="hidden md:flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-full border border-slate-200/80 text-xs font-medium text-slate-600" aria-label="Sections">
+          <a href="#crypto" class="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white transition-all flex items-center gap-2"><i class="fa-solid fa-lock text-[11px] text-slate-400" aria-hidden="true"></i><span data-en="AES-256 Crypt" data-ar="تشفير AES-256">AES-256 Crypt</span></a>
+          <a href="#entropy" class="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white transition-all flex items-center gap-2"><i class="fa-solid fa-gauge-high text-[11px] text-slate-400" aria-hidden="true"></i><span data-en="Password Strength" data-ar="قوة كلمة المرور">Password Strength</span></a>
+          <a href="#inspector" class="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white transition-all flex items-center gap-2"><i class="fa-solid fa-globe text-[11px] text-slate-400" aria-hidden="true"></i><span data-en="URL Inspector" data-ar="فحص الروابط">URL Inspector</span></a>
+        </nav>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button onclick="toggleLanguage()" title="Switch language / تغيير اللغة" aria-label="Switch language" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-900 hover:text-white border border-slate-200/90 text-slate-800 text-xs font-extrabold flex items-center justify-center transition-all shadow-sm active:scale-95">
+            <span id="langBtnText">A</span>
+          </button>
+
+          <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-mono font-medium">
+            <span id="engineDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="engineBadge">READY</span>
+          </div>
+
+          <div id="userBadge" class="hidden">
+            <div class="user-swipe-pill" id="userSwipePill">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                <span id="userNameDisplay" class="text-xs font-bold text-slate-800 truncate max-w-[90px]">Officer</span>
+              </div>
+              <div class="user-swipe-thumb" id="userSwipeThumb" role="button" tabindex="0" aria-label="Lock session (swipe, or press Enter)" title="Swipe or press Enter to lock">
+                <i class="fa-solid fa-power-off text-xs" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= HERO ================= -->
+    <section id="top" class="relative pt-36 pb-20 md:pt-44 md:pb-28 px-4 sm:px-6 max-w-7xl mx-auto w-full">
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[250px] bg-slate-200/50 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+        <div class="lg:col-span-7 text-center lg:text-start space-y-6" data-aos="fade-right">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-200/90 text-slate-800 text-xs font-semibold tracking-wide font-mono">
+            <i class="fa-solid fa-shield-halved text-blue-600" aria-hidden="true"></i>
+            <span data-en="100% CLIENT-SIDE · NOTHING UPLOADED" data-ar="تعمل بالكامل داخل متصفحك · لا يُرسل شيء">100% CLIENT-SIDE · NOTHING UPLOADED</span>
+          </div>
+
+          <h1 class="font-syne text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
+            <span data-en="Private Crypto" data-ar="تشفير وأمان">Private Crypto</span> <br class="hidden sm:inline"/>
+            <span class="bg-gradient-to-r from-slate-900 via-blue-700 to-indigo-800 bg-clip-text text-transparent" data-en="& Security Tools." data-ar="بخصوصية كاملة.">& Security Tools.</span>
+          </h1>
+
+          <p class="font-inter text-slate-600 text-base sm:text-lg max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed" data-en="Encrypt text with AES-256-GCM, measure real password strength, generate secure passwords, and inspect URLs for risky patterns — all inside your browser." data-ar="شفّر النصوص بخوارزمية AES-256-GCM، وقِس قوة كلمات المرور فعلياً، وولّد كلمات مرور آمنة، وافحص الروابط بحثاً عن الأنماط الخطرة — كل ذلك داخل متصفحك.">
+            Encrypt text with AES-256-GCM, measure real password strength, generate secure passwords, and inspect URLs for risky patterns — all inside your browser.
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+            <a href="#crypto" class="w-full sm:w-auto btn-gradient-primary font-bold text-xs px-8 py-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-xl">
+              <i class="fa-solid fa-key text-blue-400" aria-hidden="true"></i>
+              <span data-en="Launch AES-256 Encryptor" data-ar="تشغيل مشفر AES-256">Launch AES-256 Encryptor</span>
+            </a>
+            <a href="#entropy" class="w-full sm:w-auto btn-outline-sleek font-semibold text-xs px-7 py-4 rounded-2xl flex items-center justify-center gap-2.5">
+              <i class="fa-solid fa-calculator text-slate-600" aria-hidden="true"></i>
+              <span data-en="Password Analyzer" data-ar="محلل كلمات المرور">Password Analyzer</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 relative" data-aos="fade-left">
+          <div class="glass-card p-6 rounded-3xl relative overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <div class="flex items-center gap-2">
+                <span id="engineDot2" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="font-mono text-xs font-bold text-slate-800 tracking-wider" data-en="WEBCRYPTO ENGINE" data-ar="محرك التشفير">WEBCRYPTO ENGINE</span>
+              </div>
+              <span id="engineBadge2" class="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-semibold">READY</span>
+            </div>
+
+            <div class="relative w-full aspect-square max-w-[320px] mx-auto rounded-full border border-slate-200 bg-slate-950 p-2 overflow-hidden flex items-center justify-center shadow-inner" aria-hidden="true">
+              <div class="absolute inset-4 rounded-full border border-slate-800"></div>
+              <div class="absolute inset-16 rounded-full border border-slate-800"></div>
+              <div class="absolute inset-28 rounded-full border border-slate-800"></div>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="w-full h-[1px] bg-slate-800"></div>
+                <div class="h-full w-[1px] bg-slate-800 absolute"></div>
+              </div>
+              <div class="absolute inset-0 radar-beam animate-radar-sweep rounded-full"></div>
+              <div class="relative z-10 w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs font-mono font-bold shadow-lg shadow-blue-500/30">x7</div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 gap-3 font-mono text-[11px]">
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                <span class="text-slate-400 block mb-0.5" data-en="CIPHER:" data-ar="التشفير:">CIPHER:</span>
+                <span class="text-slate-900 font-bold text-xs" dir="ltr">AES-256-GCM</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                <span class="text-slate-400 block mb-0.5" data-en="KEY DERIVATION:" data-ar="اشتقاق المفتاح:">KEY DERIVATION:</span>
+                <span class="text-emerald-600 font-bold text-xs" dir="ltr">PBKDF2 · 600k</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TOOL 1: AES ================= -->
+    <section id="crypto" class="scroll-mt-28 py-20 bg-white border-y border-slate-200/80 px-4 sm:px-6 relative">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center max-w-2xl mx-auto mb-12" data-aos="fade-up">
+          <span class="text-xs font-mono font-bold text-blue-600 tracking-wider uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-200" data-en="Browser Cryptography" data-ar="تشفير المتصفح">Browser Cryptography</span>
+          <h2 class="font-syne text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3" data-en="AES-256-GCM Encryptor" data-ar="مشفّر AES-256-GCM">AES-256-GCM Encryptor</h2>
+          <p class="text-slate-600 text-sm mt-2" data-en="Authenticated encryption with the native Web Crypto API. A fresh random salt and IV are generated for every message. Nothing leaves your device." data-ar="تشفير موثّق عبر Web Crypto API. يتم توليد ملح وIV عشوائيين جديدين لكل رسالة. لا يغادر شيء جهازك.">Authenticated encryption with the native Web Crypto API. A fresh random salt and IV are generated for every message. Nothing leaves your device.</p>
+        </div>
+
+        <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200/90" data-aos="zoom-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div>
+                <label for="cryptoKeyInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 font-mono" data-en="1. Secret Passphrase" data-ar="1. عبارة السر">1. Secret Passphrase</label>
+                <div class="relative">
+                  <i class="fa-solid fa-key absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+                  <input type="password" id="cryptoKeyInput" autocomplete="off" dir="ltr" data-ph-en="Choose a strong passphrase" data-ph-ar="اختر عبارة سر قوية" placeholder="Choose a strong passphrase" class="w-full ps-9 pe-10 py-2.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 transition-all">
+                  <button type="button" onclick="toggleReveal('cryptoKeyInput','cryptoEye')" id="cryptoEye" class="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-800 text-xs" aria-label="Show / hide passphrase"><i class="fa-solid fa-eye"></i></button>
+                </div>
+              </div>
+
+              <div>
+                <label for="cryptoPlainInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 font-mono" data-en="2. Input (plaintext to encrypt, or ciphertext to decrypt)" data-ar="2. المدخل (نص للتشفير أو نص مشفر لفكّه)">2. Input (plaintext to encrypt, or ciphertext to decrypt)</label>
+                <textarea id="cryptoPlainInput" rows="5" dir="auto" data-ph-en="Enter a confidential message, or paste ciphertext to decrypt..." data-ph-ar="اكتب رسالة سرية، أو الصق نصاً مشفراً لفكّه..." placeholder="Enter a confidential message, or paste ciphertext to decrypt..." class="w-full p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 transition-all"></textarea>
+              </div>
+
+              <div class="flex gap-3">
+                <button id="encBtn" onclick="executeEncrypt()" class="flex-1 btn-accent py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md">
+                  <i class="fa-solid fa-lock text-xs" aria-hidden="true"></i>
+                  <span data-en="Encrypt" data-ar="تشفير">Encrypt</span>
+                </button>
+                <button id="decBtn" onclick="executeDecrypt()" class="flex-1 btn-outline-sleek py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-lock-open text-xs" aria-hidden="true"></i>
+                  <span data-en="Decrypt" data-ar="فك التشفير">Decrypt</span>
+                </button>
+                <button onclick="clearCrypto()" class="btn-outline-sleek py-3 px-4 rounded-xl text-xs font-bold" aria-label="Clear" title="Clear"><i class="fa-solid fa-eraser text-xs" aria-hidden="true"></i></button>
+              </div>
+            </div>
+
+            <div class="flex flex-col justify-between bg-slate-950 p-5 rounded-2xl border border-slate-800">
+              <div>
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                  <span class="text-[11px] font-mono text-slate-400 font-bold uppercase" data-en="OUTPUT" data-ar="المُخرجات">OUTPUT</span>
+                  <span id="cipherBadge" data-k="bReady" class="text-[10px] font-mono bg-slate-800 text-slate-300 px-2 py-0.5 rounded">READY</span>
+                </div>
+                <div id="cryptoOutput" dir="ltr" aria-live="polite" data-en="[SYSTEM] Standing by for encryption or decryption..." data-ar="[SYSTEM] بانتظار التشفير أو فك التشفير..." class="font-mono text-xs text-emerald-400 break-all h-44 overflow-y-auto leading-relaxed">[SYSTEM] Standing by for encryption or decryption...</div>
+              </div>
+              <button onclick="copyCryptoOutput()" class="mt-4 w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono rounded-lg transition-colors border border-slate-800 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-copy text-xs" aria-hidden="true"></i>
+                <span data-en="Copy Output" data-ar="نسخ النتيجة">Copy Output</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="mt-5 text-[11px] leading-relaxed text-slate-500" data-en="Format: x7v2.base64(salt‖iv‖ciphertext). The passphrase is stretched with PBKDF2-SHA256 (600,000 iterations). Lose the passphrase and the data cannot be recovered." data-ar="الصيغة: x7v2.base64(ملح‖iv‖نص مشفر). يتم تقوية العبارة عبر PBKDF2-SHA256 (600,000 تكرار). إذا فقدت العبارة فلا يمكن استرجاع البيانات.">Format: x7v2.base64(salt‖iv‖ciphertext). The passphrase is stretched with PBKDF2-SHA256 (600,000 iterations). Lose the passphrase and the data cannot be recovered.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TOOL 2: ENTROPY + GENERATOR ================= -->
+    <section id="entropy" class="scroll-mt-28 py-20 px-4 sm:px-6 max-w-5xl mx-auto w-full">
+      <div class="text-center max-w-2xl mx-auto mb-12" data-aos="fade-up">
+        <span class="text-xs font-mono font-bold text-blue-600 tracking-wider uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-200" data-en="Entropy Mathematics" data-ar="رياضيات التعقيد">Entropy Mathematics</span>
+        <h2 class="font-syne text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3" data-en="Password Strength Analyzer" data-ar="محلل قوة كلمات المرور">Password Strength Analyzer</h2>
+        <p class="text-slate-600 text-sm mt-2" data-en="Estimates entropy (H = L × log₂N), then penalizes common passwords, repeats and sequences. Your input never leaves this page." data-ar="يقدّر الأنتروبي (H = L × log₂N) ثم يخصم من كلمات المرور الشائعة والتكرار والتسلسلات. مدخلاتك لا تغادر هذه الصفحة.">Estimates entropy (H = L × log₂N), then penalizes common passwords, repeats and sequences. Your input never leaves this page.</p>
+      </div>
+
+      <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200/90" data-aos="zoom-in">
+        <div class="space-y-6">
+          <div>
+            <label for="entropyInput" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 font-mono" data-en="Password to measure" data-ar="كلمة المرور المراد فحصها">Password to measure</label>
+            <div class="relative">
+              <input type="password" id="entropyInput" oninput="analyzeEntropy()" autocomplete="off" dir="auto" data-ph-en="Type or generate a password..." data-ph-ar="اكتب أو ولّد كلمة مرور..." placeholder="Type or generate a password..." class="w-full p-3.5 pe-11 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800 transition-all">
+              <button type="button" onclick="toggleReveal('entropyInput','entropyEye')" id="entropyEye" class="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-800 text-sm" aria-label="Show / hide password"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <div class="mt-3 h-2 w-full bg-slate-200 rounded-full overflow-hidden" aria-hidden="true">
+              <div id="strengthBar" class="h-full rounded-full transition-all duration-300" style="width:0%"></div>
+            </div>
+            <p id="entropyWarn" class="mt-2 text-[11px] text-slate-500 min-h-[1rem]"></p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <span class="text-[10px] font-mono font-bold text-slate-400 block mb-1" data-en="ENTROPY" data-ar="التعقيد (بت)">ENTROPY</span>
+              <span id="entropyBits" class="font-syne text-2xl font-extrabold text-slate-900" dir="ltr">0.0 bits</span>
+              <span id="entropyQuality" class="block text-[11px] font-mono text-slate-500 mt-1">Empty input</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <span class="text-[10px] font-mono font-bold text-slate-400 block mb-1" data-en="CHARACTER POOL (N)" data-ar="نطاق الرموز (N)">CHARACTER POOL (N)</span>
+              <span id="poolSize" class="font-syne text-2xl font-extrabold text-slate-900">0</span>
+              <span class="block text-[11px] font-mono text-slate-500 mt-1" data-en="Symbol set size" data-ar="حجم مجموعة الرموز">Symbol set size</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <span class="text-[10px] font-mono font-bold text-slate-400 block mb-1" data-en="AVG. CRACK TIME" data-ar="متوسط وقت الكسر">AVG. CRACK TIME</span>
+              <span id="crackTime" class="font-syne text-xl font-extrabold text-slate-900">Instant</span>
+              <span class="block text-[11px] font-mono text-slate-500 mt-1" data-en="@ 10B guesses/sec, offline fast hash" data-ar="بمعدل 10 مليار محاولة/ث، هاش سريع">@ 10B guesses/sec, offline fast hash</span>
+            </div>
+          </div>
+
+          <!-- Generator -->
+          <div class="border-t border-slate-200 pt-6">
+            <h3 class="font-jakarta text-sm font-bold text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-dice text-slate-500" aria-hidden="true"></i><span data-en="Secure Password Generator" data-ar="مولّد كلمات مرور آمن">Secure Password Generator</span></h3>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <label class="flex items-center gap-3 text-xs text-slate-700 flex-1">
+                <span data-en="Length" data-ar="الطول">Length</span>
+                <input type="range" id="genLen" min="12" max="64" value="20" oninput="$('genLenVal').textContent=this.value" class="flex-1" aria-label="Password length">
+                <span id="genLenVal" class="font-mono font-bold w-6 text-center">20</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-700">
+                <input type="checkbox" id="genSym" checked>
+                <span data-en="Symbols" data-ar="رموز">Symbols</span>
+              </label>
+              <button onclick="generatePassword()" class="btn-gradient-primary px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-xs" aria-hidden="true"></i>
+                <span data-en="Generate" data-ar="توليد">Generate</span>
+              </button>
+              <button onclick="copyEntropyInput()" class="btn-outline-sleek px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2" aria-label="Copy password">
+                <i class="fa-solid fa-copy text-xs" aria-hidden="true"></i>
+                <span data-en="Copy" data-ar="نسخ">Copy</span>
+              </button>
+            </div>
+            <p class="mt-2 text-[11px] text-slate-500" data-en="Uses crypto.getRandomValues with unbiased rejection sampling." data-ar="يستخدم crypto.getRandomValues مع أخذ عينات خالٍ من الانحياز.">Uses crypto.getRandomValues with unbiased rejection sampling.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TOOL 3: URL INSPECTOR ================= -->
+    <section id="inspector" class="scroll-mt-28 py-20 bg-white border-t border-slate-200/80 px-4 sm:px-6">
+      <div class="max-w-5xl mx-auto">
+        <div class="text-center max-w-2xl mx-auto mb-12" data-aos="fade-up">
+          <span class="text-xs font-mono font-bold text-blue-600 tracking-wider uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-200" data-en="Protocol Validation" data-ar="فحص البروتوكول">Protocol Validation</span>
+          <h2 class="font-syne text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3" data-en="URL Security Inspector" data-ar="فاحص أمان الروابط">URL Security Inspector</h2>
+          <p class="text-slate-600 text-sm mt-2" data-en="Breaks a URL into parts and flags phishing and leakage patterns: embedded credentials, IP hosts, punycode, risky ports and secrets in the query string." data-ar="يقسّم الرابط إلى أجزائه وينبّه إلى أنماط التصيّد والتسريب: بيانات دخول مضمّنة، عناوين IP، punycode، منافذ خطرة، وأسرار داخل الاستعلام.">Breaks a URL into parts and flags phishing and leakage patterns: embedded credentials, IP hosts, punycode, risky ports and secrets in the query string.</p>
+        </div>
+
+        <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200/90" data-aos="zoom-in">
+          <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <label for="urlInput" class="sr-only">URL</label>
+              <input type="text" id="urlInput" dir="ltr" spellcheck="false" onkeydown="if(event.key==='Enter')inspectUrl()" value="https://x7.cybersecurity.enterprise:8443/api/v4/telemetry?token=sec_9082" class="flex-1 p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:border-slate-800">
+              <button onclick="inspectUrl()" class="btn-gradient-primary px-6 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-magnifying-glass text-xs" aria-hidden="true"></i>
+                <span data-en="Inspect URL" data-ar="فحص الرابط">Inspect URL</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 font-mono text-xs">
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="PROTOCOL" data-ar="البروتوكول">PROTOCOL</span>
+                <span id="resProtocol" class="font-bold text-slate-900" dir="ltr">—</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 min-w-0">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="HOSTNAME" data-ar="المستضيف">HOSTNAME</span>
+                <span id="resHost" class="font-bold text-slate-900 break-all" dir="ltr">—</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="PORT" data-ar="المنفذ">PORT</span>
+                <span id="resPort" class="font-bold text-slate-900" dir="ltr">—</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="TRANSPORT" data-ar="النقل">TRANSPORT</span>
+                <span id="resSsl" class="font-bold text-slate-900">—</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 col-span-2 min-w-0">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="PATH" data-ar="المسار">PATH</span>
+                <span id="resPath" class="font-bold text-slate-900 break-all" dir="ltr">—</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="QUERY PARAMS" data-ar="عوامل الاستعلام">QUERY PARAMS</span>
+                <span id="resParams" class="font-bold text-slate-900">0</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span class="text-slate-400 block text-[10px] mb-1" data-en="RISK LEVEL" data-ar="مستوى الخطورة">RISK LEVEL</span>
+                <span id="resRisk" class="font-bold text-slate-900">—</span>
+              </div>
+            </div>
+
+            <ul id="urlFindings" class="space-y-2 pt-2 text-xs"></ul>
+
+            <p class="text-[11px] leading-relaxed text-slate-500 pt-1" data-en="Static analysis only: no request is made, so certificates, reputation and page content are not verified." data-ar="تحليل ثابت فقط: لا يتم إرسال أي طلب، لذلك لا يتم التحقق من الشهادات أو السمعة أو محتوى الصفحة.">Static analysis only: no request is made, so certificates, reputation and page content are not verified.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bg-white border-t border-slate-200/80 py-12 pb-28 md:pb-12 px-4 sm:px-6 relative z-10">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-slate-900 text-white font-syne font-bold flex items-center justify-center text-sm">x7</div>
+          <span class="font-syne font-bold text-slate-900 text-base">x7 Security Toolkit</span>
+        </div>
+        <p class="text-xs text-slate-500 font-mono text-center" data-en="&copy; 2026 x7. All processing happens locally in your browser." data-ar="&copy; 2026 x7. كل المعالجة تتم محلياً داخل متصفحك.">&copy; 2026 x7. All processing happens locally in your browser.</p>
+        <div class="flex items-center gap-4 text-slate-400 text-sm">
+          <a href="#" class="hover:text-slate-900 transition-colors" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+          <a href="#" class="hover:text-slate-900 transition-colors" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" class="hover:text-slate-900 transition-colors" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Mobile bottom nav -->
+    <nav class="md:hidden fixed bottom-3 inset-x-4 z-40 glass-nav rounded-full shadow-lg flex items-center justify-around py-2.5 text-slate-600 text-base" aria-label="Sections (mobile)">
+      <a href="#crypto" class="px-5 py-1" aria-label="AES-256"><i class="fa-solid fa-lock"></i></a>
+      <a href="#entropy" class="px-5 py-1" aria-label="Password strength"><i class="fa-solid fa-gauge-high"></i></a>
+      <a href="#inspector" class="px-5 py-1" aria-label="URL inspector"><i class="fa-solid fa-globe"></i></a>
+    </nav>
+  </div>
+
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    const $ = id => document.getElementById(id);
+    window.$ = $;
+    const enc = new TextEncoder();
+    const dec = new TextDecoder();
+    const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const KDF_ITER = 600000;
+    const hasCrypto = () => !!(window.crypto && crypto.subtle);
+
+    if (window.AOS) AOS.init({ duration: 600, once: true, disable: reduceMotion });
+
+    /* ============ safe storage ============ */
+    const store = {
+      get(k, s) { try { return (s ? sessionStorage : localStorage).getItem(k); } catch { return null; } },
+      set(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); return true; } catch { return false; } },
+      del(k, s) { try { (s ? sessionStorage : localStorage).removeItem(k); } catch {} }
+    };
+
+    /* ============ i18n ============ */
+    let lang = store.get('x7_lang') === 'ar' ? 'ar' : 'en';
+    const T = {
+      en: {
+        pageTitle: 'x7 — Browser Cryptography & Security Toolkit',
+        authIn: 'Secure Sign-In Required', authUp: 'Create Local Account',
+        btnIn: 'Sign In & Unlock', btnUp: 'Create Account & Unlock',
+        errCreds: 'Invalid email or password.', errExists: 'An account with this email already exists in this browser.',
+        errShort: 'Password must be at least 10 characters.', errLock: 'Too many attempts. Try again in {n}s.',
+        errStorage: 'Browser storage is unavailable, so accounts cannot be saved.',
+        errEmail: 'Enter a valid email address.',
+        noCrypto: 'Web Crypto is unavailable. Open this page over HTTPS or on localhost.',
+        enterPlain: 'Enter some text first.', enterPass: 'Enter a passphrase first.',
+        needCipher: 'Paste valid ciphertext into the input box first.',
+        copied: 'Copied to clipboard.', copyFail: 'Copy failed.', nothingCopy: 'Nothing to copy yet.',
+        encErr: '[ERROR] Encryption failed.',
+        decErr: '[DECRYPTION ERROR] Wrong passphrase, or the data is corrupted / modified.',
+        bReady: 'READY', bEnc: 'AES-256-GCM ENCRYPTED', bDec: 'DECRYPTED', bBusy: 'WORKING…',
+        engReady: 'READY', engNo: 'UNAVAILABLE · NEEDS HTTPS',
+        empty: 'Empty input', q1: 'Very weak', q2: 'Weak', q3: 'Fair', q4: 'Strong', q5: 'Very strong',
+        instant: 'Instant', bits: 'bits',
+        wCommon: 'Matches a very common password.', wShort: 'Shorter than 12 characters.',
+        wPattern: 'Contains repeated or sequential characters.', wOne: 'Uses only one character type.',
+        wGood: 'No obvious weaknesses found.',
+        sec: 'sec', min: 'min', hr: 'hours', day: 'days', yr: 'years', k: 'thousand years', m: 'million years', b: 'billion years', tr: '> 1 trillion years',
+        urlInvalid: 'Invalid URL.', rLow: 'LOW', rMed: 'MEDIUM', rHigh: 'HIGH',
+        tls: 'TLS (HTTPS)', plain: 'PLAIN HTTP',
+        f_assumed: 'No scheme was given, so https:// was assumed.',
+        f_https: 'Connection is encrypted with TLS (certificate not verified here).',
+        f_http: 'Plain HTTP: traffic can be read or modified in transit.',
+        f_badScheme: 'Dangerous scheme "{v}" can execute code or expose local data.',
+        f_otherScheme: 'Non-web scheme "{v}".',
+        f_ip: 'Host is an IP address instead of a domain name (common in phishing/malware).',
+        f_puny: 'Punycode (xn--) host: may be a look-alike (homograph) domain.',
+        f_userinfo: 'URL embeds credentials (user@host). A classic trick to disguise the real destination.',
+        f_port: 'Non-standard port {v}.',
+        f_riskyPort: 'Port {v} is commonly a sensitive service (should not be exposed publicly).',
+        f_sens: 'Sensitive-looking query keys ({v}) can leak via logs, history and Referer headers.',
+        f_tld: 'The .{v} TLD is frequently abused for throwaway/phishing domains.',
+        f_subs: 'Unusually many subdomain levels — check the real registrable domain.',
+        f_long: 'Very long URL (over 200 characters).',
+        f_local: 'Points to a local / private network address.'
+      },
+      ar: {
+        pageTitle: 'x7 — أدوات التشفير والأمن السيبراني داخل المتصفح',
+        authIn: 'تسجيل الدخول مطلوب', authUp: 'إنشاء حساب محلي',
+        btnIn: 'تسجيل الدخول وفتح النظام', btnUp: 'إنشاء الحساب وفتح النظام',
+        errCreds: 'البريد أو كلمة المرور غير صحيحة.', errExists: 'يوجد حساب بهذا البريد في هذا المتصفح بالفعل.',
+        errShort: 'يجب ألا تقل كلمة المرور عن 10 أحرف.', errLock: 'محاولات كثيرة. أعد المحاولة بعد {n} ثانية.',
+        errStorage: 'تخزين المتصفح غير متاح، لذلك لا يمكن حفظ الحساب.',
+        errEmail: 'أدخل بريداً إلكترونياً صحيحاً.',
+        noCrypto: 'Web Crypto غير متاح. افتح الصفحة عبر HTTPS أو localhost.',
+        enterPlain: 'اكتب نصاً أولاً.', enterPass: 'أدخل عبارة السر أولاً.',
+        needCipher: 'الصق نصاً مشفراً صالحاً في خانة المدخل أولاً.',
+        copied: 'تم النسخ إلى الحافظة.', copyFail: 'تعذّر النسخ.', nothingCopy: 'لا يوجد ما يُنسخ بعد.',
+        encErr: '[خطأ] فشل التشفير.',
+        decErr: '[خطأ في فك التشفير] عبارة السر خاطئة أو أن البيانات تالفة / معدّلة.',
+        bReady: 'جاهز', bEnc: 'تم التشفير AES-256-GCM', bDec: 'تم فك التشفير', bBusy: 'جارٍ العمل…',
+        engReady: 'جاهز', engNo: 'غير متاح · يتطلب HTTPS',
+        empty: 'إدخال فارغ', q1: 'ضعيفة جداً', q2: 'ضعيفة', q3: 'متوسطة', q4: 'قوية', q5: 'قوية جداً',
+        instant: 'فوري', bits: 'بت',
+        wCommon: 'تطابق كلمة مرور شائعة جداً.', wShort: 'أقصر من 12 حرفاً.',
+        wPattern: 'تحتوي على أحرف مكررة أو متسلسلة.', wOne: 'تستخدم نوعاً واحداً فقط من الرموز.',
+        wGood: 'لا توجد نقاط ضعف واضحة.',
+        sec: 'ثانية', min: 'دقيقة', hr: 'ساعة', day: 'يوم', yr: 'سنة', k: 'ألف سنة', m: 'مليون سنة', b: 'مليار سنة', tr: '> تريليون سنة',
+        urlInvalid: 'صيغة الرابط غير صحيحة.', rLow: 'منخفض', rMed: 'متوسط', rHigh: 'مرتفع',
+        tls: 'مشفّر (TLS/HTTPS)', plain: 'غير مشفّر (HTTP)',
+        f_assumed: 'لم يُحدَّد بروتوكول، لذلك تم افتراض https://.',
+        f_https: 'الاتصال مشفّر بـ TLS (لا يتم التحقق من الشهادة هنا).',
+        f_http: 'HTTP عادي: يمكن قراءة البيانات أو تعديلها أثناء النقل.',
+        f_badScheme: 'البروتوكول الخطير "{v}" قد ينفّذ شيفرة أو يكشف بيانات محلية.',
+        f_otherScheme: 'بروتوكول غير ويب "{v}".',
+        f_ip: 'المستضيف عنوان IP بدلاً من اسم نطاق (شائع في التصيّد والبرمجيات الخبيثة).',
+        f_puny: 'مستضيف Punycode (xn--): قد يكون نطاقاً منتحلاً بحروف مشابهة.',
+        f_userinfo: 'الرابط يحتوي بيانات دخول (user@host). حيلة شهيرة لإخفاء الوجهة الحقيقية.',
+        f_port: 'منفذ غير قياسي {v}.',
+        f_riskyPort: 'المنفذ {v} يُستخدم عادةً لخدمة حساسة (لا يجب كشفه للعامة).',
+        f_sens: 'مفاتيح استعلام حساسة ({v}) قد تتسرب عبر السجلات والتاريخ وترويسة Referer.',
+        f_tld: 'النطاق العلوي .{v} يُساء استخدامه كثيراً في نطاقات التصيّد المؤقتة.',
+        f_subs: 'عدد مستويات النطاقات الفرعية كبير على غير العادة — تحقق من النطاق الحقيقي.',
+        f_long: 'رابط طويل جداً (أكثر من 200 حرف).',
+        f_local: 'يشير إلى عنوان محلي / شبكة خاصة.'
+      }
+    };
+    const t = (k, v) => {
+      let s = T[lang][k] ?? T.en[k] ?? k;
+      if (v) for (const [a, b] of Object.entries(v)) s = s.replace('{' + a + '}', b);
+      return s;
+    };
+
+    function applyLang() {
+      const root = document.documentElement;
+      root.lang = lang; root.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      $('langBtnText').textContent = lang === 'ar' ? 'E' : 'A';
+      document.querySelectorAll('[data-en]').forEach(el => {
+        const v = el.getAttribute('data-' + lang);
+        if (v != null) el.textContent = v;
+      });
+      document.querySelectorAll('[data-ph-en]').forEach(el => { el.placeholder = el.getAttribute('data-ph-' + lang); });
+      document.querySelectorAll('[data-k]').forEach(el => { el.textContent = t(el.dataset.k); });
+      document.title = t('pageTitle');
+      refreshAuthTexts(); refreshEngine(); analyzeEntropy(); renderUrl();
+    }
+    window.toggleLanguage = function () {
+      lang = lang === 'en' ? 'ar' : 'en';
+      store.set('x7_lang', lang);
+      applyLang();
+    };
+
+    /* ============ helpers ============ */
+    function toast(msg, kind) {
+      const el = document.createElement('div');
+      el.className = 'pointer-events-auto px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xl border ' +
+        (kind === 'err' ? 'bg-rose-600 text-white border-rose-700' : 'bg-slate-900 text-white border-slate-700');
+      el.textContent = msg;
+      $('toastHost').appendChild(el);
+      setTimeout(() => { el.style.transition = 'opacity .4s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 450); }, 2400);
+    }
+    function bytesToB64(bytes) {
+      let s = ''; const CH = 0x8000;
+      for (let i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+      return btoa(s);
+    }
+    function b64ToBytes(b64) {
+      const bin = atob(b64); const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    function ctEqual(a, b) {
+      if (a.length !== b.length) return false;
+      let d = 0; for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i];
+      return d === 0;
+    }
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); }
+        else {
+          const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          const ok = document.execCommand('copy'); ta.remove(); if (!ok) throw 0;
+        }
+        toast(t('copied'));
+      } catch { toast(t('copyFail'), 'err'); }
+    }
+    window.toggleReveal = function (inputId, btnId) {
+      const i = $(inputId); const show = i.type === 'password';
+      i.type = show ? 'text' : 'password';
+      $(btnId).innerHTML = '<i class="fa-solid ' + (show ? 'fa-eye-slash' : 'fa-eye') + '"></i>';
+    };
+
+    /* ============ engine status ============ */
+    function refreshEngine() {
+      const ok = hasCrypto();
+      const txt = ok ? t('engReady') : t('engNo');
+      ['engineBadge', 'engineBadge2'].forEach(id => { $(id).textContent = txt; });
+      ['engineDot', 'engineDot2'].forEach(id => {
+        $(id).className = (id === 'engineDot' ? 'w-2 h-2' : 'w-2.5 h-2.5') + ' rounded-full ' + (ok ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500');
+      });
+      ['encBtn', 'decBtn'].forEach(id => { $(id).disabled = !ok; });
+    }
+
+    /* ============ background canvas ============ */
+    const canvas = $('bgCanvas'); const ctx = canvas.getContext('2d');
+    let W, H, particles = [], rafId = null;
+    function resizeCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    class Particle {
+      constructor() { this.x = Math.random() * W; this.y = Math.random() * H; this.vx = (Math.random() - .5) * .35; this.vy = (Math.random() - .5) * .35; this.r = Math.random() * 1.5 + 1; }
+      update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > W) this.vx *= -1; if (this.y < 0 || this.y > H) this.vy *= -1; }
+      draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.fillStyle = 'rgba(15,23,42,.15)'; ctx.fill(); }
+    }
+    function drawFrame(step) {
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < particles.length; i++) {
+        if (step) particles[i].update();
+        particles[i].draw();
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          const d = Math.hypot(dx, dy);
+          if (d < 120) {
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = 'rgba(15,23,42,' + (0.1 - d / 120 * 0.1) + ')'; ctx.lineWidth = 1; ctx.stroke();
+          }
+        }
+      }
+    }
+    function loop() { drawFrame(true); rafId = requestAnimationFrame(loop); }
+    function startCanvas() {
+      resizeCanvas(); particles = [];
+      const n = W < 640 ? 24 : 40;
+      for (let i = 0; i < n; i++) particles.push(new Particle());
+      if (reduceMotion) drawFrame(false); else loop();
+    }
+    window.addEventListener('resize', () => { resizeCanvas(); if (reduceMotion) drawFrame(false); });
+    document.addEventListener('visibilitychange', () => {
+      if (reduceMotion) return;
+      if (document.hidden) { cancelAnimationFrame(rafId); rafId = null; } else if (!rafId) loop();
+    });
+    startCanvas();
+
+    /* ============ AUTH (local, hashed) ============ */
+    let authMode = 'signin', failCount = 0, lockedUntil = 0;
+    const ACTIVE = ['bg-white', 'text-slate-900', 'shadow-sm'];
+    const INACTIVE = ['text-slate-500', 'hover:text-slate-900'];
+
+    function refreshAuthTexts() {
+      $('authTitle').textContent = authMode === 'signup' ? t('authUp') : t('authIn');
+      $('authSubmitBtn').querySelector('span').textContent = authMode === 'signup' ? t('btnUp') : t('btnIn');
+    }
+    window.switchAuthTab = function (mode) {
+      authMode = mode;
+      const up = mode === 'signup';
+      $('tabSignUp').classList.remove(...(up ? INACTIVE : ACTIVE)); $('tabSignUp').classList.add(...(up ? ACTIVE : INACTIVE));
+      $('tabSignIn').classList.remove(...(up ? ACTIVE : INACTIVE)); $('tabSignIn').classList.add(...(up ? INACTIVE : ACTIVE));
+      $('tabSignIn').setAttribute('aria-selected', String(!up)); $('tabSignUp').setAttribute('aria-selected', String(up));
+      $('nameGroup').classList.toggle('hidden', !up);
+      $('authPassword').autocomplete = up ? 'new-password' : 'current-password';
+      authError(''); refreshAuthTexts();
+    };
+    function authError(msg) {
+      const el = $('authError'); el.textContent = msg; el.classList.toggle('hidden', !msg);
+    }
+    function loadAccounts() { try { return JSON.parse(store.get('x7_accounts') || '{}') || {}; } catch { return {}; } }
+    async function hashPw(pw, salt, iter) {
+      const km = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+      return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, km, 256));
+    }
+
+    window.handleAuthSubmit = async function (e) {
+      e.preventDefault(); authError('');
+      if (!hasCrypto()) return authError(t('noCrypto'));
+      const now = Date.now();
+      if (now < lockedUntil) return authError(t('errLock', { n: Math.ceil((lockedUntil - now) / 1000) }));
+
+      const email = $('authEmail').value.trim().toLowerCase();
+      const pw = $('authPassword').value;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authError(t('errEmail'));
+
+      const btn = $('authSubmitBtn'); btn.disabled = true;
+      try {
+        const accounts = loadAccounts();
+        if (authMode === 'signup') {
+          if (pw.length < 10) return authError(t('errShort'));
+          if (accounts[email]) return authError(t('errExists'));
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const hash = await hashPw(pw, salt, KDF_ITER);
+          const name = $('authName').value.trim() || email.split('@')[0];
+          accounts[email] = { name, salt: bytesToB64(salt), hash: bytesToB64(hash), iter: KDF_ITER };
+          if (!store.set('x7_accounts', JSON.stringify(accounts))) return authError(t('errStorage'));
+          unlockSystem(name);
+        } else {
+          const acc = accounts[email];
+          const salt = acc ? b64ToBytes(acc.salt) : crypto.getRandomValues(new Uint8Array(16));
+          const got = await hashPw(pw, salt, acc ? acc.iter : KDF_ITER); // same work either way
+          if (acc && ctEqual(got, b64ToBytes(acc.hash))) { failCount = 0; unlockSystem(acc.name); }
+          else {
+            failCount++;
+            if (failCount >= 5) { lockedUntil = Date.now() + 30000; failCount = 0; authError(t('errLock', { n: 30 })); }
+            else authError(t('errCreds'));
+          }
+        }
+      } catch { authError(t('errCreds')); }
+      finally { btn.disabled = false; }
+    };
+
+    function unlockSystem(name) {
+      store.set('x7_session', name, true);
+      resetThumb();
+      $('authPassword').value = '';
+      $('authOverlay').classList.add('opacity-0', 'pointer-events-none', 'invisible');
+      const main = $('mainContent');
+      main.inert = false; main.classList.remove('blur-md', 'pointer-events-none');
+      $('userNameDisplay').textContent = name;
+      $('userBadge').classList.remove('hidden');
+    }
+    function lockSystem() {
+      store.del('x7_session', true);
+      resetThumb();
+      // wipe sensitive fields when locking
+      ['cryptoKeyInput', 'cryptoPlainInput', 'entropyInput'].forEach(id => { $(id).value = ''; });
+      clearCrypto(); analyzeEntropy();
+      $('authOverlay').classList.remove('opacity-0', 'pointer-events-none', 'invisible');
+      const main = $('mainContent'); main.inert = true; main.classList.add('blur-md', 'pointer-events-none');
+      $('userBadge').classList.add('hidden');
+      setTimeout(() => $('authEmail').focus(), 100);
+    }
+
+    /* ---- swipe-to-lock (pointer events + keyboard) ---- */
+    const pill = $('userSwipePill'), thumb = $('userSwipeThumb');
+    let dragging = false, startX = 0, curX = 0, maxDrag = 0;
+    function resetThumb() { thumb.style.transform = 'translateX(0px)'; curX = 0; dragging = false; }
+    thumb.addEventListener('pointerdown', e => {
+      dragging = true; startX = e.clientX;
+      const travel = pill.clientWidth - thumb.clientWidth - 20;
+      maxDrag = lang === 'ar' ? travel : -travel;
+      thumb.setPointerCapture(e.pointerId);
+    });
+    thumb.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      let d = e.clientX - startX;
+      d = lang === 'ar' ? Math.max(0, Math.min(d, maxDrag)) : Math.min(0, Math.max(d, maxDrag));
+      curX = d; thumb.style.transform = 'translateX(' + d + 'px)';
+      if (Math.abs(d) >= Math.abs(maxDrag) * 0.9) { dragging = false; lockSystem(); }
+    });
+    const endDrag = () => {
+      if (!dragging) return; dragging = false;
+      thumb.style.transition = 'transform .3s ease'; thumb.style.transform = 'translateX(0px)';
+      setTimeout(() => { thumb.style.transition = ''; }, 300);
+    };
+    thumb.addEventListener('pointerup', endDrag);
+    thumb.addEventListener('pointercancel', endDrag);
+    thumb.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lockSystem(); } });
+
+    /* ============ AES-256-GCM ============ */
+    const PREFIX = 'x7v2.';
+    let lastOutput = '';
+
+    async function deriveKey(pass, salt, iter) {
+      const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    }
+    function setBadge(k) { const b = $('cipherBadge'); b.dataset.k = k; b.textContent = t(k); }
+    function setOutput(text, badgeKey, isResult) {
+      const o = $('cryptoOutput'); o.removeAttribute('data-en'); o.removeAttribute('data-ar');
+      o.textContent = text; lastOutput = isResult ? text : ''; setBadge(badgeKey);
+    }
+    async function busy(fn) {
+      const btns = [$('encBtn'), $('decBtn')];
+      btns.forEach(b => b.disabled = true); setBadge('bBusy');
+      await new Promise(r => setTimeout(r, 30)); // let the UI paint
+      try { await fn(); } finally { btns.forEach(b => b.disabled = !hasCrypto()); }
+    }
+
+    window.executeEncrypt = async function () {
+      if (!hasCrypto()) return toast(t('noCrypto'), 'err');
+      const pass = $('cryptoKeyInput').value, plain = $('cryptoPlainInput').value;
+      if (!pass) return toast(t('enterPass'), 'err');
+      if (!plain) return toast(t('enterPlain'), 'err');
+      await busy(async () => {
+        try {
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const key = await deriveKey(pass, salt, KDF_ITER);
+          const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plain)));
+          const all = new Uint8Array(16 + 12 + ct.length);
+          all.set(salt, 0); all.set(iv, 16); all.set(ct, 28);
+          setOutput(PREFIX + bytesToB64(all), 'bEnc', true);
+        } catch { setOutput(t('encErr'), 'bReady', false); }
+      });
+    };
+
+    window.executeDecrypt = async function () {
+      if (!hasCrypto()) return toast(t('noCrypto'), 'err');
+      const pass = $('cryptoKeyInput').value;
+      if (!pass) return toast(t('enterPass'), 'err');
+      const raw = ($('cryptoPlainInput').value.trim() || lastOutput).replace(/\s+/g, '');
+      if (!raw) return toast(t('needCipher'), 'err');
+      await busy(async () => {
+        try {
+          let salt, iter, iv, data;
+          if (raw.startsWith(PREFIX)) {
+            const b = b64ToBytes(raw.slice(PREFIX.length));
+            salt = b.slice(0, 16); iv = b.slice(16, 28); data = b.slice(28); iter = KDF_ITER;
+          } else { // legacy v1 format (static salt, 100k iterations)
+            const b = b64ToBytes(raw);
+            salt = enc.encode('x7-static-salt'); iv = b.slice(0, 12); data = b.slice(12); iter = 100000;
+          }
+          const key = await deriveKey(pass, salt, iter);
+          const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+          setOutput(dec.decode(pt), 'bDec', true);
+        } catch { setOutput(t('decErr'), 'bReady', false); }
+      });
+    };
+
+    window.copyCryptoOutput = function () {
+      if (!lastOutput) return toast(t('nothingCopy'), 'err');
+      copyText(lastOutput);
+    };
+    window.clearCrypto = function () {
+      $('cryptoPlainInput').value = '';
+      const o = $('cryptoOutput');
+      o.setAttribute('data-en', '[SYSTEM] Standing by for encryption or decryption...');
+      o.setAttribute('data-ar', '[SYSTEM] بانتظار التشفير أو فك التشفير...');
+      o.textContent = o.getAttribute('data-' + lang);
+      lastOutput = ''; setBadge('bReady');
+    };
+
+    /* ============ PASSWORD ENTROPY ============ */
+    const COMMON = new Set(['password','123456','12345678','123456789','1234567890','qwerty','qwerty123','abc123','111111','000000','letmein','welcome','admin','administrator','iloveyou','monkey','dragon','master','login','passw0rd','football','baseball','sunshine','princess','trustno1','superman','whatever','login','zaq12wsx','1q2w3e4r','changeme','secret','p@ssw0rd','x7','root','toor','test','guest']);
+    const leet = s => s.replace(/[@4]/g, 'a').replace(/0/g, 'o').replace(/[1!|]/g, 'i').replace(/3/g, 'e').replace(/[$5]/g, 's').replace(/7/g, 't');
+
+    function fmtDuration(s) {
+      if (s < 1) return t('instant');
+      if (s < 60) return Math.round(s) + ' ' + t('sec');
+      if (s < 3600) return Math.round(s / 60) + ' ' + t('min');
+      if (s < 86400) return Math.round(s / 3600) + ' ' + t('hr');
+      const days = s / 86400;
+      if (days < 365) return Math.round(days) + ' ' + t('day');
+      const y = days / 365.25;
+      if (y < 1e3) return Math.round(y).toLocaleString('en-US') + ' ' + t('yr');
+      if (y < 1e6) return Math.round(y / 1e3).toLocaleString('en-US') + ' ' + t('k');
+      if (y < 1e9) return Math.round(y / 1e6).toLocaleString('en-US') + ' ' + t('m');
+      if (y < 1e12) return Math.round(y / 1e9).toLocaleString('en-US') + ' ' + t('b');
+      return t('tr');
+    }
+
+    window.analyzeEntropy = function () {
+      const pwd = $('entropyInput').value;
+      const bar = $('strengthBar');
+      if (!pwd) {
+        $('entropyBits').textContent = '0.0 ' + t('bits'); $('entropyQuality').textContent = t('empty');
+        $('poolSize').textContent = '0'; $('crackTime').textContent = t('instant');
+        $('entropyWarn').textContent = ''; bar.style.width = '0%'; return;
+      }
+      const chars = Array.from(pwd);
+      const hasL = /[a-z]/.test(pwd), hasU = /[A-Z]/.test(pwd), hasD = /[0-9]/.test(pwd), hasS = /[\x20-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]/.test(pwd), hasX = chars.some(c => c.codePointAt(0) > 127);
+      let pool = 0;
+      if (hasL) pool += 26; if (hasU) pool += 26; if (hasD) pool += 10; if (hasS) pool += 33; if (hasX) pool += 100;
+      const per = Math.log2(Math.max(pool, 2));
+
+      let bits = 0, predictable = 0;
+      chars.forEach((c, i) => {
+        if (i > 0) {
+          const d = c.codePointAt(0) - chars[i - 1].codePointAt(0);
+          if (d === 0 || Math.abs(d) === 1) { predictable++; bits += 1; return; }
+        }
+        bits += per;
+      });
+
+      const lower = pwd.toLowerCase();
+      const cands = [lower, lower.replace(/[\d\W_]+$/, ''), leet(lower), leet(lower).replace(/[^a-z]+$/, '')];
+      const common = cands.some(c => COMMON.has(c));
+      if (common) bits = Math.min(bits, 12);
+
+      const classes = [hasL, hasU, hasD, hasS, hasX].filter(Boolean).length;
+      const warns = [];
+      if (common) warns.push(t('wCommon'));
+      if (chars.length < 12) warns.push(t('wShort'));
+      if (predictable >= 3) warns.push(t('wPattern'));
+      if (classes === 1) warns.push(t('wOne'));
+
+      $('entropyBits').textContent = bits.toFixed(1) + ' ' + t('bits');
+      $('poolSize').textContent = String(pool);
+
+      const q = bits < 28 ? ['q1', '#e11d48', 12] : bits < 36 ? ['q2', '#f97316', 30] : bits < 60 ? ['q3', '#eab308', 55] : bits < 80 ? ['q4', '#22c55e', 80] : ['q5', '#059669', 100];
+      $('entropyQuality').textContent = t(q[0]);
+      bar.style.width = q[2] + '%'; bar.style.background = q[1];
+      $('entropyWarn').textContent = warns.length ? warns.join(' ') : t('wGood');
+
+      // average case: attacker needs 2^(H-1) guesses at 10^10 per second
+      const log2s = (bits - 1) - Math.log2(1e10);
+      $('crackTime').textContent = fmtDuration(Math.pow(2, Math.min(log2s, 200)));
+    };
+
+    function randInt(max) {
+      const lim = Math.floor(0x100000000 / max) * max; const a = new Uint32Array(1);
+      do { crypto.getRandomValues(a); } while (a[0] >= lim);
+      return a[0] % max;
+    }
+    window.generatePassword = function () {
+      if (!hasCrypto()) return toast(t('noCrypto'), 'err');
+      const len = +$('genLen').value;
+      const sets = ['abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '0123456789'];
+      if ($('genSym').checked) sets.push('!@#$%^&*()-_=+[]{};:,.?/');
+      const all = sets.join('');
+      const out = sets.map(s => s[randInt(s.length)]);
+      while (out.length < len) out.push(all[randInt(all.length)]);
+      for (let i = out.length - 1; i > 0; i--) { const j = randInt(i + 1); [out[i], out[j]] = [out[j], out[i]]; }
+      const inp = $('entropyInput');
+      inp.value = out.join('');
+      if (inp.type === 'password') toggleReveal('entropyInput', 'entropyEye');
+      analyzeEntropy();
+    };
+    window.copyEntropyInput = function () {
+      const v = $('entropyInput').value; if (!v) return toast(t('nothingCopy'), 'err'); copyText(v);
+    };
+
+    /* ============ URL INSPECTOR ============ */
+    let lastUrl = null;
+    const RISKY_PORTS = new Set(['21', '22', '23', '25', '135', '139', '445', '1433', '1521', '3306', '3389', '5432', '5900', '6379', '9200', '11211', '27017']);
+    const SUSP_TLDS = new Set(['zip', 'mov', 'tk', 'top', 'xyz', 'click', 'gq', 'ml', 'cf', 'ga', 'work', 'country', 'kim']);
+    const BAD_SCHEMES = new Set(['javascript:', 'data:', 'vbscript:', 'file:', 'blob:']);
+    const SENS_KEY = /token|secret|passw|pwd|api[_-]?key|auth|session|sid|signature|credential/i;
+
+    window.inspectUrl = function () {
+      const raw = $('urlInput').value.trim();
+      if (!raw) return toast(t('urlInvalid'), 'err');
+      let u, assumed = false;
+      const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) || /^(javascript|data|file|mailto|vbscript|blob):/i.test(raw);
+      try { u = new URL(hasScheme ? raw : 'https://' + raw); assumed = !hasScheme; }
+      catch { return toast(t('urlInvalid'), 'err'); }
+
+      const F = []; // findings {s, k, v}
+      if (assumed) F.push({ s: 'info', k: 'f_assumed' });
+      const proto = u.protocol, host = u.hostname;
+
+      if (proto === 'https:') F.push({ s: 'ok', k: 'f_https' });
+      else if (proto === 'http:') F.push({ s: 'warn', k: 'f_http' });
+      else if (BAD_SCHEMES.has(proto)) F.push({ s: 'danger', k: 'f_badScheme', v: proto });
+      else F.push({ s: 'info', k: 'f_otherScheme', v: proto });
+
+      if (u.username || u.password) F.push({ s: 'danger', k: 'f_userinfo' });
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('[')) F.push({ s: 'warn', k: 'f_ip' });
+      if (host.split('.').some(l => l.startsWith('xn--'))) F.push({ s: 'warn', k: 'f_puny' });
+      if (u.port) {
+        F.push({ s: 'info', k: 'f_port', v: u.port });
+        if (RISKY_PORTS.has(u.port)) F.push({ s: 'warn', k: 'f_riskyPort', v: u.port });
+      }
+      const keys = [...new Set([...u.searchParams.keys()])];
+      const sens = keys.filter(k => SENS_KEY.test(k));
+      if (sens.length) F.push({ s: 'warn', k: 'f_sens', v: sens.slice(0, 4).join(', ') });
+      const labels = host.split('.'); const tld = labels[labels.length - 1];
+      if (labels.length > 1 && SUSP_TLDS.has(tld)) F.push({ s: 'info', k: 'f_tld', v: tld });
+      if (labels.length > 5) F.push({ s: 'info', k: 'f_subs' });
+      if (raw.length > 200) F.push({ s: 'info', k: 'f_long' });
+      if (host === 'localhost' || /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)) F.push({ s: 'info', k: 'f_local' });
+
+      const danger = F.filter(f => f.s === 'danger').length, warn = F.filter(f => f.s === 'warn').length;
+      const risk = danger > 0 || warn >= 3 ? 'high' : warn > 0 ? 'med' : 'low';
+
+      const defPort = proto === 'https:' ? '443' : proto === 'http:' ? '80' : '';
+      lastUrl = {
+        proto: proto.replace(':', '').toUpperCase(), host: host || '—',
+        port: u.port || (defPort ? defPort + ' (default)' : '—'),
+        transport: proto === 'https:' ? 'tls' : proto === 'http:' ? 'plain' : null,
+        path: u.pathname + (u.hash || ''), params: u.searchParams.size ?? keys.length, risk, F
+      };
+      renderUrl();
+    };
+
+    function renderUrl() {
+      if (!lastUrl) return;
+      const r = lastUrl;
+      $('resProtocol').textContent = r.proto; $('resHost').textContent = r.host; $('resPort').textContent = r.port;
+      const ssl = $('resSsl');
+      ssl.textContent = r.transport === 'tls' ? t('tls') : r.transport === 'plain' ? t('plain') : '—';
+      ssl.className = 'font-bold ' + (r.transport === 'tls' ? 'text-emerald-600' : r.transport === 'plain' ? 'text-rose-600' : 'text-slate-900');
+      $('resPath').textContent = r.path; $('resParams').textContent = String(r.params);
+      const rk = $('resRisk');
+      rk.textContent = r.risk === 'high' ? t('rHigh') : r.risk === 'med' ? t('rMed') : t('rLow');
+      rk.className = 'font-bold ' + (r.risk === 'high' ? 'text-rose-600' : r.risk === 'med' ? 'text-amber-600' : 'text-emerald-600');
+
+      const ul = $('urlFindings'); ul.textContent = '';
+      const ICON = { danger: ['fa-circle-xmark', 'text-rose-600'], warn: ['fa-triangle-exclamation', 'text-amber-600'], info: ['fa-circle-info', 'text-slate-500'], ok: ['fa-circle-check', 'text-emerald-600'] };
+      r.F.forEach(f => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5';
+        const i = document.createElement('i'); i.className = 'fa-solid ' + ICON[f.s][0] + ' ' + ICON[f.s][1] + ' mt-0.5'; i.setAttribute('aria-hidden', 'true');
+        const sp = document.createElement('span'); sp.className = 'text-slate-700 leading-relaxed';
+        sp.textContent = t(f.k, f.v !== undefined ? { v: f.v } : null); // textContent: URL parts can't inject HTML
+        li.append(i, sp); ul.appendChild(li);
+      });
+    }
+
+    /* ============ init ============ */
+    window.addEventListener('DOMContentLoaded', () => {});
+    applyLang();
+    inspectUrl();
+    clearCrypto();
+    const sess = store.get('x7_session', true);
+    if (sess) unlockSystem(sess); else setTimeout(() => $('authEmail').focus(), 200);
+  })();
+  </script>
+</body>
+</html>

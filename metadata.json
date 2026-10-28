@@ -1,0 +1,6 @@
+{
+  "name": "x7 — Browser Cryptography & Security Toolkit",
+  "description": "Client-side AES-256-GCM encryption, password entropy analyzer, secure password generator, cryptographic hashing, and URL security inspector.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
